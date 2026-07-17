@@ -1,0 +1,18 @@
+# Files excluded from the distributable plugin zip (bin/build-zip.sh).
+# Everything here is dev/tooling — not shipped to a WordPress install.
+# README.md, CHANGELOG.md, LICENSE, and config/example-config.php ARE shipped.
+
+.git
+.gitignore
+.distignore
+dist
+bin
+tests
+tools
+config/README.md
+lc-core_Extraction-Report_2026-07-14.md
+
+# Python / OS cruft
+__pycache__
+*.pyc
+.DS_Store
