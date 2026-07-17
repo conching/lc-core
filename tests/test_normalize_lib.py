@@ -22,6 +22,7 @@ from normalize_lib import (
     norm,
     resolve,
     spec_required_titles,
+    spreadsheet_safe,
     upsert_record,
 )
 
@@ -36,6 +37,11 @@ class TestNorm(unittest.TestCase):
 
     def test_none_is_empty(self):
         self.assertEqual(norm(None), "")
+
+    def test_spreadsheet_safe_formula_prefixes(self):
+        self.assertEqual(spreadsheet_safe("=1+1"), "'=1+1")
+        self.assertEqual(spreadsheet_safe("+18085551212"), "'+18085551212")
+        self.assertEqual(spreadsheet_safe("ordinary"), "ordinary")
 
 
 class TestHkey(unittest.TestCase):

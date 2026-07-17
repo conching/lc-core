@@ -27,7 +27,8 @@
 ```php
 $config['my_cpt'] = array(
     // Header column(s) that uniquely identify this type in a CSV. All must be
-    // present for the type to be detected. First config entry that matches wins.
+    // present for the type to be detected. Signatures must be unique; multiple
+    // matches are rejected as ambiguous before any content is written.
     'signature'        => array( 'my_signature_column' ),
 
     // Header-title assertion: the file is REJECTED if any of these column titles
