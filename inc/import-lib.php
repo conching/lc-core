@@ -91,24 +91,21 @@ if ( ! function_exists( 'lc_core_assert_headers' ) ) :
 	}
 endif;
 
-if ( ! function_exists( 'lc_core_detect_type' ) ) :
+if ( ! function_exists( 'lc_core_detect_types' ) ) :
 	/**
-	 * Detect a post type from a CSV header row using per-type signature columns.
-	 *
-	 * $config is the import config (see inc/config.php): keyed by post type, each
-	 * entry may carry a 'signature' => string|string[] of header names that uniquely
-	 * identify that type. The first type whose ALL signature headers are present wins
-	 * (order = config order). Generalizes the predecessor plugin's hard-coded detect_type().
+	 * Return every configured post type whose signature matches the headers.
 	 *
 	 * @param string[] $headers Header cells.
 	 * @param array    $config  Import config keyed by post type.
-	 * @return string Post type slug, or '' if none matched.
+	 * @return string[] Matching post type slugs.
 	 */
-	function lc_core_detect_type( $headers, $config ) {
+	function lc_core_detect_types( $headers, $config ) {
 		$have = array();
 		foreach ( (array) $headers as $h ) {
 			$have[ (string) $h ] = true;
 		}
+
+		$matches = array();
 		foreach ( (array) $config as $type => $def ) {
 			if ( empty( $def['signature'] ) ) {
 				continue;
@@ -122,10 +119,29 @@ if ( ! function_exists( 'lc_core_detect_type' ) ) :
 				}
 			}
 			if ( $matched ) {
-				return (string) $type;
+				$matches[] = (string) $type;
 			}
 		}
-		return '';
+
+		return $matches;
+	}
+endif;
+
+if ( ! function_exists( 'lc_core_detect_type' ) ) :
+	/**
+	 * Detect a post type from a CSV header row using per-type signature columns.
+	 *
+	 * $config is the import config (see inc/config.php): keyed by post type, each
+	 * entry may carry a 'signature' => string|string[] of header names that uniquely
+	 * identify that type. Exactly one type must match; ambiguous signatures fail closed.
+	 *
+	 * @param string[] $headers Header cells.
+	 * @param array    $config  Import config keyed by post type.
+	 * @return string Post type slug, or '' if none matched.
+	 */
+	function lc_core_detect_type( $headers, $config ) {
+		$matches = lc_core_detect_types( $headers, $config );
+		return 1 === count( $matches ) ? $matches[0] : '';
 	}
 endif;
 

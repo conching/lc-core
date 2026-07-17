@@ -31,10 +31,21 @@ rm -f "$EXCLUDES"
 
 mkdir -p dist
 ZIP="$ROOT/dist/lc-core-${VERSION}.zip"
+CHECKSUM="${ZIP}.sha256"
 rm -f "$ZIP"
 ( cd "$STAGE" && zip -rq "$ZIP" lc-core )
+
+if command -v shasum >/dev/null 2>&1; then
+	( cd "$ROOT/dist" && shasum -a 256 "$(basename "$ZIP")" > "$(basename "$CHECKSUM")" )
+elif command -v sha256sum >/dev/null 2>&1; then
+	( cd "$ROOT/dist" && sha256sum "$(basename "$ZIP")" > "$(basename "$CHECKSUM")" )
+else
+	echo "FATAL: shasum or sha256sum is required to produce the release checksum" >&2
+	exit 1
+fi
 
 echo
 echo "== Contents =="
 unzip -l "$ZIP"
 echo "Built: dist/lc-core-${VERSION}.zip"
+echo "Checksum: dist/lc-core-${VERSION}.zip.sha256"

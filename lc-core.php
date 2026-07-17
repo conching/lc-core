@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       LC Core
  * Description:       Site-agnostic starter framework for Library Creative WordPress sites — a config-driven content importer, a KSES allowlist module, and generic Bricks query-var helpers. Per-site CPTs / taxonomies / ACF field groups / import mappings live in a separate config layer (see config/example-config.php). Deploy alongside lc-bricks-mcp.
- * Version:           0.2.2
+ * Version:           0.3.0
  * Requires PHP:      7.4
  * Author:            Library Creative
  * License:           GPL-2.0-or-later
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'LC_CORE_VERSION', '0.2.2' );
+define( 'LC_CORE_VERSION', '0.3.0' );
 define( 'LC_CORE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'LC_CORE_URL', plugin_dir_url( __FILE__ ) );
 

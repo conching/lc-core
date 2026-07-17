@@ -2,6 +2,23 @@
 
 All notable changes to LC Core. Format loosely follows Keep a Changelog; this plugin uses semantic-ish versioning.
 
+## [0.3.0] — 2026-07-17
+
+### Security and correctness
+
+- Restrict the global KSES input allowance to radio/checkbox types.
+- Reject ambiguous CSV type signatures, sanitize/limit supplied import keys, count
+  creates/updates only after successful writes, and require an unambiguous exact
+  attachment filename match.
+- Add an opt-in spreadsheet-safe CSV mode for formula-like cells.
+
+### Performance and delivery
+
+- Stream workbook rows after the bounded header scan instead of loading a whole
+  sheet into memory.
+- Add Python dependency metadata, PHP/Python CI matrices, focused KSES tests,
+  and filename-bound SHA-256 release checksums.
+
 ## [0.2.2] — 2026-07-16
 
 ### Added (example per-site config)
