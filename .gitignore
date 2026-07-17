@@ -1,0 +1,21 @@
+# Build output
+/dist/
+*.zip
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Normalizer output (per-site generated content; never committed to lc-core)
+/tools/data/
+/tools/*-warnings.txt
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Per-site config (deployment-specific; ships in site zips, never committed)
+/config/site-config.php

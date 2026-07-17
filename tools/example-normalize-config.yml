@@ -1,0 +1,76 @@
+# ============================================================================
+# LC Core — EXAMPLE normalize config (fictional "Maple Ridge Farmers Market")
+# ============================================================================
+# Per-site config for tools/normalize_workbook.py. Copy this next to your
+# project's workbook, rename, and edit. YAML shown here; .json works too.
+#
+# Contract with the PHP side: each sheet's `columns` keys become the output
+# CSV's header row, and must match what the site's `lc_core_import_config`
+# filter expects (required_columns, field_map, taxonomy columns).
+#
+# THE HEADER ASSERTION IS MANDATORY: every `from:` title below must exist in
+# the sheet's header row, or the run aborts loudly. If the client renames or
+# inserts columns, you update this file — the tool never guesses positions.
+# ============================================================================
+
+site: "Maple Ridge Farmers Market (fictional example)"
+
+# Optional: regex used to split multi-value taxonomy cells.
+# Default: "[;,/]| and |\+|\|"
+# split_regex: "[;,/]|\\|"
+
+# Alias tables: term slug -> list of raw spellings clients actually type.
+# Keep in sync with the term seeder in config/example-config.php (the WP side
+# stores the same aliases in term meta for the importer's fallback resolution).
+# Map noisy no-op vocabulary to the empty slug "" to silence warnings for it.
+taxonomy_aliases:
+  mrfm_category:
+    produce: ["produce", "vegetables", "veggies", "fruit & veg"]
+    baked-goods: ["baked goods", "bakery", "bread & pastry"]
+    dairy-eggs: ["dairy & eggs", "dairy", "eggs"]
+    crafts: ["crafts", "artisan goods", "handmade"]
+    prepared-food: ["prepared food", "food trucks", "ready to eat"]
+    "": ["misc", "other", "tbd"]
+  mrfm_day:
+    saturday: ["saturday", "sat"]
+    wednesday: ["wednesday", "wed", "midweek"]
+  mrfm_season:
+    spring: ["spring"]
+    summer: ["summer"]
+    fall: ["fall", "autumn"]
+    winter: ["winter", "holiday"]
+
+sheets:
+  - sheet: "Vendors"              # workbook tab name (exact)
+    output: "vendors.csv"         # written to the output dir
+    columns:
+      # output CSV column -> where the value comes from.
+      #   from:   source column HEADER TITLE (asserted present, case-insensitive)
+      #   const:  literal value
+      #   derive: title   -> import_key = md5(normalized title)[:12]  (TITLE ONLY)
+      #   tax:    resolve the cell through taxonomy_aliases -> pipe-joined slugs
+      #   bool:   truthy cell ("1","yes","y","true","x") -> "1", else "0"
+      import_key: { derive: title }
+      post_title: { from: "Vendor Name" }
+      post_status: { const: "publish" }
+      url: { from: "Website" }
+      summary: { from: "Description" }
+      stall: { from: "Stall" }
+      featured: { from: "Featured?", bool: true }
+      vendor_category: { from: "Category" }        # free text; PHP maps via _tax:
+      mrfm_day: { from: "Market Days", tax: "mrfm_day" }  # slugs; importer's taxonomy column
+      image_filename: { from: "Photo" }
+    draft_when_empty: ["url"]     # rows without a URL land as drafts
+    url_columns: ["url"]          # post-run sanity check: must be ^https?://
+
+  - sheet: "Events"
+    output: "events.csv"
+    columns:
+      import_key: { derive: title }
+      post_title: { from: "Event" }
+      post_status: { const: "publish" }
+      summary: { from: "Description" }
+      event_date: { from: "Date" }
+      url: { from: "Info Link" }
+      mrfm_season: { from: "Season", tax: "mrfm_season" }
+    url_columns: ["url"]
