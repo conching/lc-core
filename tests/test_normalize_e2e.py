@@ -58,6 +58,8 @@ def build_workbook(path):
     ws.append([2, "Blue Barn Bakery", "", "", "Sat"])                      # no URL -> draft
     ws.append([3, "Maple  Ridge   Honey", "https://example.org/honey2", "", ""])  # title drift -> merges
     ws.append([4, "Fiddlehead Farm", "fiddlehead.example", "", "Blursday"])  # bad URL + unknown day
+    ws.append([5, "Formula Farm", "=HYPERLINK(\"https://bad.example\")", "", "Sat"])
+    ws["C7"].data_type = "s"  # text beginning '=' rather than an evaluated workbook formula
     wb.save(path)
 
 
@@ -92,7 +94,7 @@ def main():
             for r in csv.DictReader(f):
                 rows[r["post_title"]] = r
 
-        check("title-drift rows merged (3 unique vendors)", len(rows) == 3, str(sorted(rows)))
+        check("title-drift rows merged (4 unique vendors)", len(rows) == 4, str(sorted(rows)))
         honey = rows.get("Maple Ridge Honey", {})
         check("first URL kept on merge", honey.get("url") == "https://example.org/honey", str(honey))
         check("key derived from title only", honey.get("import_key") == __import__("hashlib").md5(b"maple ridge honey").hexdigest()[:12], str(honey.get("import_key")))
@@ -105,6 +107,21 @@ def main():
         check("TITLE COLLISION warned", "TITLE COLLISION" in warns, warns)
         check("malformed URL warned", "MALFORMED URL" in warns, warns)
         check("unmatched tax value warned", "Blursday" in warns, warns)
+
+        # --- explicit spreadsheet-safe export path ---
+        safe_dir = os.path.join(tmp, "safe-out")
+        res_safe = subprocess.run(
+            [sys.executable, TOOL, wb_path, cfg_path, "--out", safe_dir, "--spreadsheet-safe"],
+            capture_output=True, text=True,
+        )
+        check("spreadsheet-safe export exits 0", res_safe.returncode == 0, res_safe.stdout + res_safe.stderr)
+        with open(os.path.join(safe_dir, "vendors.csv"), encoding="utf-8") as f:
+            safe_rows = {r["post_title"]: r for r in csv.DictReader(f)}
+        check(
+            "formula-like cell is escaped for spreadsheet opening",
+            safe_rows.get("Formula Farm", {}).get("url", "").startswith("'="),
+            str(safe_rows.get("Formula Farm")),
+        )
 
         # --- header-assertion path: config expects a column the sheet lacks ---
         bad_cfg = json.loads(json.dumps(CONFIG))

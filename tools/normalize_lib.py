@@ -22,6 +22,17 @@ import unicodedata
 DEFAULT_SPLIT_RE = r"[;,/]| and |\+|\|"
 
 
+def spreadsheet_safe(value):
+    """Escape a CSV cell that spreadsheet apps could evaluate as a formula.
+
+    This is intentionally opt-in at the CLI because the normal output is consumed
+    directly by WordPress and a leading apostrophe would become imported data.
+    """
+    if not isinstance(value, str) or not value:
+        return value
+    return "'" + value if value[0] in ("=", "+", "-", "@") else value
+
+
 def norm(s):
     """Normalize a cell: NFC, curly quotes -> ʻokina, collapse whitespace, trim."""
     if s is None:

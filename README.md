@@ -2,7 +2,7 @@
 
 A site-agnostic WordPress starter framework for Library Creative sites, deployed alongside `lc-bricks-mcp`. It ships the reusable machinery every LC site needs and **nothing site-specific**: the custom post types, taxonomies, ACF field groups, and import mappings for a given project live in that project's own **config layer**.
 
-- **Version:** 0.1.0
+- **Version:** 0.3.0
 - **License:** GPL-2.0-or-later
 - **Requires PHP:** 7.4
 - **Text domain:** `lc-core`
@@ -76,7 +76,7 @@ The config declares, per output CSV: the source sheet, the column order (with a 
 
 ```bash
 tests/run.sh          # php -l + python syntax check + standalone unit tests (no WordPress, no openpyxl)
-bin/build-zip.sh      # -> dist/lc-core-0.1.0.zip, honoring .distignore
+bin/build-zip.sh      # -> dist/lc-core-0.3.0.zip, honoring .distignore
 ```
 
 ## What is NOT here (left in the predecessor plugin)

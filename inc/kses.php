@@ -22,6 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 add_filter( 'wp_kses_allowed_html', 'lc_core_kses_allow_form_controls', 10, 2 );
+add_filter( 'pre_kses', 'lc_core_kses_restrict_input_types', 10, 3 );
 
 function lc_core_kses_allow_form_controls( $tags, $context ) {
 	if ( ! apply_filters( 'lc_core_kses_enable', true ) ) {
@@ -66,4 +67,35 @@ function lc_core_kses_allow_form_controls( $tags, $context ) {
 	}
 
 	return (array) apply_filters( 'lc_core_kses_allowed_html', $tags, $context );
+}
+
+/**
+ * Remove input types outside the inert CSS-only contract before KSES runs.
+ *
+ * KSES allowlists attribute names, not an enum of allowed attribute values. The
+ * post-context allowance therefore needs this value-level guard so it cannot be
+ * reused for password, file, submit, or other interactive controls.
+ *
+ * @param string $content           Content before KSES filtering.
+ * @param array  $allowed_html      Effective allowed tag/attribute map.
+ * @param array  $allowed_protocols Allowed URL protocols (unused).
+ * @return string Filtered content.
+ */
+function lc_core_kses_restrict_input_types( $content, $allowed_html, $allowed_protocols = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	if ( ! isset( $allowed_html['input'] ) ) {
+		return $content;
+	}
+
+	$allowed_types = (array) apply_filters( 'lc_core_kses_input_types', array( 'radio', 'checkbox' ) );
+	return (string) preg_replace_callback(
+		'/<input\b[^>]*>/i',
+		function ( $match ) use ( $allowed_types ) {
+			if ( 1 !== preg_match( '/\btype\s*=\s*(["\']?)([^\s"\'>]+)\1/i', $match[0], $type_match ) ) {
+				return '';
+			}
+			$type = strtolower( $type_match[2] );
+			return in_array( $type, $allowed_types, true ) ? $match[0] : '';
+		},
+		(string) $content
+	);
 }

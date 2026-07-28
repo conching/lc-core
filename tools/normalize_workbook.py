@@ -26,6 +26,7 @@ configured sheet-output plus normalization-warnings.txt in the output dir.
 import argparse
 import csv
 import json
+import itertools
 import os
 import sys
 
@@ -38,6 +39,7 @@ from normalize_lib import (  # noqa: E402
     map_row,
     norm,
     spec_required_titles,
+    spreadsheet_safe,
     upsert_record,
 )
 
@@ -117,6 +119,11 @@ def main(argv=None):
     ap.add_argument("workbook", help="client .xlsx workbook")
     ap.add_argument("config", help="per-site normalize config (.yml/.yaml/.json)")
     ap.add_argument("--out", default=None, help="output dir (default: ./data next to this script)")
+    ap.add_argument(
+        "--spreadsheet-safe",
+        action="store_true",
+        help="prefix formula-like CSV cells for safe human opening (do not use for direct WordPress import)",
+    )
     args = ap.parse_args(argv)
 
     cfg = load_config(args.config)
@@ -148,13 +155,15 @@ def main(argv=None):
         columns = sheet_cfg["columns"]
         required = spec_required_titles(columns)
 
-        rows = list(rows_of(ws))
+        rows = rows_of(ws)
+        header_scan = list(itertools.islice(rows, 20))
         # MANDATORY header-title assertion — HeaderError is a SystemExit (loud, non-zero).
-        header_idx, header_map = find_header_row(rows, required)
+        header_idx, header_map = find_header_row(header_scan, required)
         print("[%s] header validated (%d source columns) at row %d" % (sheet_name, len(required), header_idx + 1))
 
         records = {}
-        for row_cells in rows[header_idx + 1 :]:
+        data_rows = itertools.chain(header_scan[header_idx + 1 :], rows)
+        for row_cells in data_rows:
             record, warnings = map_row(row_cells, header_map, columns, lookup, split_re)
             record = apply_row_rules(record, sheet_cfg, warnings)
             for w in warnings:
@@ -167,7 +176,12 @@ def main(argv=None):
             w = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
             w.writeheader()
             for record in sorted(records.values(), key=lambda r: r.get("post_title", "").lower()):
-                w.writerow(record)
+                output_record = (
+                    {key: spreadsheet_safe(value) for key, value in record.items()}
+                    if args.spreadsheet_safe
+                    else record
+                )
+                w.writerow(output_record)
         print("[%s] wrote %d rows -> %s" % (sheet_name, len(records), out_path))
 
     all_warnings = list(dict.fromkeys(all_warnings))  # dedupe, keep order

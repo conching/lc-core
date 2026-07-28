@@ -77,11 +77,14 @@ function lc_core_import_csv_file( $path, $opts = array() ) {
 		$headers
 	);
 
-	$type = lc_core_detect_type( $headers, $config );
+	$matching_types = lc_core_detect_types( $headers, $config );
+	$type           = 1 === count( $matching_types ) ? $matching_types[0] : '';
 	$report['type'] = $type;
 	if ( ! $type ) {
 		fclose( $fh );
-		$report['error'] = 'Could not detect post type from headers. Check the `signature` columns in your import config. Header: ' . implode( ', ', $headers );
+		$report['error'] = count( $matching_types ) > 1
+			? 'Ambiguous post type signatures matched: ' . implode( ', ', $matching_types ) . '. Make each signature unique before importing.'
+			: 'Could not detect post type from headers. Check the `signature` columns in your import config. Header: ' . implode( ', ', $headers );
 		return $report;
 	}
 	if ( ! post_type_exists( $type ) ) {
@@ -124,9 +127,12 @@ function lc_core_import_csv_file( $path, $opts = array() ) {
 		}
 
 		// import_key from the CSV, else derived from the TITLE ONLY.
-		$key = ( isset( $row['import_key'] ) && '' !== $row['import_key'] )
-			? $row['import_key']
-			: lc_core_derive_import_key( $title );
+		if ( isset( $row['import_key'] ) && '' !== $row['import_key'] ) {
+			$clean_key = sanitize_text_field( $row['import_key'] );
+			$key       = function_exists( 'mb_substr' ) ? mb_substr( $clean_key, 0, 191, 'UTF-8' ) : substr( $clean_key, 0, 191 );
+		} else {
+			$key = lc_core_derive_import_key( $title );
+		}
 
 		$status = ( isset( $row['post_status'] ) && in_array( $row['post_status'], array( 'publish', 'draft' ), true ) )
 			? $row['post_status']
@@ -193,15 +199,18 @@ function lc_core_import_csv_file( $path, $opts = array() ) {
 		if ( $existing ) {
 			$postarr['ID'] = $existing;
 			$post_id       = wp_update_post( $postarr, true );
-			$report['updated']++;
 		} else {
 			$post_id = wp_insert_post( $postarr, true );
-			$report['created']++;
 		}
 		if ( is_wp_error( $post_id ) ) {
 			$report['skipped']++;
 			$report['notes'][] = "Error on '{$title}': " . $post_id->get_error_message();
 			continue;
+		}
+		if ( $existing ) {
+			$report['updated']++;
+		} else {
+			$report['created']++;
 		}
 		$claimed[] = (int) $post_id;
 		if ( $key ) {
@@ -357,14 +366,18 @@ function lc_core_ensure_term( $name_or_slug, $tax, &$report, $slug = '' ) {
  */
 function lc_core_find_attachment( $filename ) {
 	global $wpdb;
-	$name = pathinfo( $filename, PATHINFO_FILENAME );
-	$id   = $wpdb->get_var(
+	$name = sanitize_file_name( basename( (string) $filename ) );
+	if ( '' === $name ) {
+		return 0;
+	}
+	$ids = $wpdb->get_col(
 		$wpdb->prepare(
-			"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key='_wp_attached_file' AND meta_value LIKE %s LIMIT 1",
-			'%' . $wpdb->esc_like( $name ) . '%'
+			"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key='_wp_attached_file' AND (meta_value = %s OR meta_value LIKE %s) ORDER BY post_id ASC LIMIT 2",
+			$name,
+			'%/' . $wpdb->esc_like( $name )
 		)
 	);
-	return $id ? (int) $id : 0;
+	return 1 === count( $ids ) ? (int) $ids[0] : 0;
 }
 
 /* -------------------------------------------------------------------------

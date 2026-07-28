@@ -62,7 +62,8 @@ $config = array(
 );
 check( 'single signature match', lc_core_detect_type( array( 'post_title', 'vendor_category' ), $config ), 'mrfm_vendor' );
 check( 'second type', lc_core_detect_type( array( 'post_title', 'event_date' ), $config ), 'mrfm_event' );
-check( 'first full match wins (config order)', lc_core_detect_type( array( 'vendor_category', 'event_date' ), $config ), 'mrfm_vendor' );
+check( 'ambiguous signatures fail closed', lc_core_detect_type( array( 'vendor_category', 'event_date' ), $config ), '' );
+check( 'all ambiguous matches are reported', lc_core_detect_types( array( 'vendor_category', 'event_date' ), $config ), array( 'mrfm_vendor', 'mrfm_event', 'mrfm_both' ) );
 check( 'no match -> empty', lc_core_detect_type( array( 'post_title' ), $config ), '' );
 check( 'multi-column signature needs ALL', lc_core_detect_type( array( 'event_date' ), array( 'x' => array( 'signature' => array( 'event_date', 'venue' ) ) ) ), '' );
 check( 'empty config -> empty', lc_core_detect_type( array( 'post_title' ), array() ), '' );
