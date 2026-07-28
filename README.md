@@ -6,7 +6,7 @@ A site-agnostic WordPress starter framework for Library Creative sites, deployed
 - **License:** GPL-2.0-or-later
 - **Requires PHP:** 7.4
 - **Text domain:** `lc-core`
-- **Provenance:** extracted from a private predecessor site plugin in July 2026. See `../lc-core_Extraction-Report_2026-07-14.md`.
+- **Provenance:** extracted from a private predecessor site plugin in July 2026. The extraction report is kept internally.
 
 ## What's in the box
 
@@ -46,7 +46,7 @@ For local demos you can load the example inside lc-core itself by defining `LC_C
 
 ## Importer semantics (do not "clean these up")
 
-Every one of these is a fixed production incident carried over from the predecessor plugin. See `CHANGELOG.md` and the extraction report for the incident history.
+Every one of these is a fixed production incident carried over from the predecessor plugin. See `CHANGELOG.md` for the incident history.
 
 1. **Identity is the TITLE ONLY.** `import_key` comes from the CSV, or is derived as `md5(lowercased, whitespace-collapsed title)[:12]`. Never fold a correctable field (URL/phone) into identity.
 2. **Upsert fallback is exact-title `get_posts` (`post_status => any`)**, skipping trashed posts and posts already claimed this run. **Never `get_page_by_path`** — slugs miss drafts and `-2` duplicates.
@@ -81,4 +81,4 @@ bin/build-zip.sh      # -> dist/lc-core-0.1.0.zip, honoring .distignore
 
 ## What is NOT here (left in the predecessor plugin)
 
-The predecessor project's product layer — conditional site-state modes, brand tokens, dynamic tags, admin-bar recolor, mode-specific homepage pickers, event phases — stays in the predecessor plugin. Two GENERALIZABLE modules (`inc/preview.php` client-review links and `inc/redirects.php` page old-slug 301s) are strong candidates for a future lc-core release; see the extraction report §5.
+The predecessor project's product layer — conditional site-state modes, brand tokens, dynamic tags, admin-bar recolor, mode-specific homepage pickers, event phases — stays in the predecessor plugin. Two GENERALIZABLE modules (`inc/preview.php` client-review links and `inc/redirects.php` page old-slug 301s) are strong candidates for a future lc-core release.
